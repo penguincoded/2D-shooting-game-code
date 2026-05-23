@@ -296,6 +296,7 @@ document.addEventListener("keydown", e => {
         } 
         // MAGAZINE RELOAD (All at once)
         else {
+            reloading = true;
             const reloadWeapon = currentWeapon;
             setTimeout(() => {
                 if (currentWeapon !== reloadWeapon) return;
@@ -327,7 +328,6 @@ canvas.addEventListener("mousemove", e => {
 // =========================
 // SHOOTING
 // =========================
-let mouseDown = false;
 
 canvas.addEventListener("mousedown", () => {
 
@@ -565,7 +565,7 @@ function spawnEnemy() {
                 shootCooldown: 0
             };
         }
-        else if (roll < 0.65) {
+        else if (roll < 0.8) {
 
             enemy = {
                 x, y,
