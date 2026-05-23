@@ -34,11 +34,17 @@ OR use VS Code Live Server for better performance.
 📁 Project Structure
 2D-shooting-game-code/
 │
+
 ├── index.html
+
 ├── style.css
+
 ├── game.js
+
 ├── shoot.wav
+
 ├── hit.wav
+
 └── LICENSE
 
 🛠 Built With
