@@ -532,8 +532,19 @@ function spawnEnemy() {
         const roll = Math.random();
         let enemy;
 
+        // NORMAL ENEMY
+        if (roll < 0.4) {
+            enemy = {
+                x, y,
+                type: "normal",
+                size: 32,
+                speed: 2,
+                health: 2,
+                color: "red"
+            };
+        }
         // FAST ENEMY
-        if (roll < 0.3) {
+        else if (roll < 0.6) {
             enemy = {
                 x, y,
                 type: "fast",
@@ -542,19 +553,9 @@ function spawnEnemy() {
                 health: 1,
                 color: "orange"
             };
-        } 
-        // TANK ENEMY
-        else if (roll < 0.5) {
-            enemy = {
-                x, y,
-                type: "tank",
-                size: 50,
-                speed: 1,
-                health: 5,
-                color: "purple"
-            };
         }
-        else if (roll < 0.7) {
+        // RANGED ENEMY
+        else if (roll < 0.8) {
             enemy = {
                 x, y,
                 type: "ranged",
@@ -565,34 +566,30 @@ function spawnEnemy() {
                 shootCooldown: 0
             };
         }
-        else if (roll < 0.8) {
-
+        // TANK ENEMY
+        else if (roll < 0.93) {
             enemy = {
                 x, y,
-
+                type: "tank",
+                size: 50,
+                speed: 1,
+                health: 5,
+                color: "purple"
+            };
+        }
+        // BOMBER ENEMY
+        else{
+            enemy = {
+                x, y,
                 type: "bomber",
-
                 size: 26,
                 speed: 5,
-
                 health: 1,
-
                 color: "yellow",
-
                 explodeRadius: 120
             };
         }
-        // NORMAL ENEMY
-        else {
-            enemy = {
-                x, y,
-                type: "normal",
-                size: 32,
-                speed: 2,
-                health: 2,
-                color: "red"
-            };
-        }
+        
 
         enemies.push(enemy);
     }, 1000);
