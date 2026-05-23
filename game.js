@@ -28,6 +28,7 @@ const player = {
 const bullets = [];
 const enemies = [];
 const particles = [];
+const damageTexts = [];
 const drops = [];
 const explosions = [];
 const shockwaves = [];
@@ -45,6 +46,7 @@ let dashTimer = 0;
 let reloading = false;
 let reloadInterval = null;
 let bossActive = false;
+let lastShotTime = 0;
 
 // =========================
 // WAVE SYSTEM
@@ -92,7 +94,7 @@ const weapons = {
 
     shotgun: {
         name: "Shotgun",
-        damage: 1,
+        damage: 1.5,
         fireRate: 700,
         bulletSpeed: 16,
         bulletCount: 6,
@@ -127,7 +129,7 @@ const weapons = {
         fireRate: 1200,
         bulletSpeed: 30,
         bulletCount: 1,
-        bulletSize: 2,
+        bulletSize: 5,
         spread: 0,
         maxAmmo: 3,
         ammo: 3,
@@ -173,6 +175,7 @@ const mouse = {
     y: 0
 };
 const keys = {};
+let mouseDown = false;
 
 // =========================
 // KEYDOWN EVENT
@@ -324,51 +327,105 @@ canvas.addEventListener("mousemove", e => {
 // =========================
 // SHOOTING
 // =========================
-canvas.addEventListener("click", () => {
+let mouseDown = false;
+
+canvas.addEventListener("mousedown", () => {
+
+    mouseDown = true;
+
     // START GAME
     if (!gameStarted) {
+
         gameStarted = true;
+
         waveRest = true;
         restTimer = 5;
-        return;
     }
+});
+
+canvas.addEventListener("mouseup", () => {
+
+    mouseDown = false;
+});
+
+function shoot() {
 
     if (paused || choosingPerk) return;
-    if (reloading && currentWeapon !== "shotgun") return;
+
+    if (
+        reloading &&
+        currentWeapon !== weapons.shotgun
+    ) return;
+
     if (currentWeapon.ammo <= 0) return;
 
     // SHOTGUN INTERRUPT RELOAD
-    if (currentWeapon === "shotgun" && reloading) {
+    if (
+        currentWeapon === weapons.shotgun &&
+        reloading
+    ) {
+
         clearInterval(reloadInterval);
+
         reloading = false;
     }
 
     currentWeapon.ammo--;
 
-    const centerX = player.x + player.size / 2;
-    const centerY = player.y + player.size / 2;
-    const baseAngle = Math.atan2(mouse.y - centerY, mouse.x - centerX);
+    const centerX =
+        player.x + player.size / 2;
 
-    // PLAY SOUND
+    const centerY =
+        player.y + player.size / 2;
+
+    const baseAngle =
+        Math.atan2(
+            mouse.y - centerY,
+            mouse.x - centerX
+        );
+
+    // SOUND
     const s = shootSound.cloneNode();
+
     s.volume = 0.3;
+
     s.play();
 
-    const bulletCount = currentWeapon.bulletCount;
-    const spread = currentWeapon.spread;
+    // BULLETS
+    for (
+        let b = 0;
+        b < currentWeapon.bulletCount;
+        b++
+    ) {
 
-    // CREATE BULLETS
-    for (let b = 0; b < bulletCount; b++) {
-        const angle = baseAngle + (Math.random() - 0.5) * spread;
+        const angle =
+            baseAngle +
+            (Math.random() - 0.5) *
+            currentWeapon.spread;
+
         bullets.push({
+
             x: centerX,
             y: centerY,
-            dx: Math.cos(angle) * currentWeapon.bulletSpeed,
-            dy: Math.sin(angle) * currentWeapon.bulletSpeed,
+
+            dx:
+                Math.cos(angle) *
+                currentWeapon.bulletSpeed,
+
+            dy:
+                Math.sin(angle) *
+                currentWeapon.bulletSpeed,
+
             size: currentWeapon.bulletSize,
+
             damage: currentWeapon.damage,
-            explosive: currentWeapon.explosive || false,
-            explosionRadius: currentWeapon.explosionRadius || 0,
+
+            explosive:
+                currentWeapon.explosive || false,
+
+            explosionRadius:
+                currentWeapon.explosionRadius || 0,
+
             trail: []
         });
     }
@@ -377,17 +434,29 @@ canvas.addEventListener("click", () => {
     player.x -= Math.cos(baseAngle) * 12;
     player.y -= Math.sin(baseAngle) * 12;
 
+    // ROCKET EFFECT
     if (currentWeapon === weapons.rocket) {
+
         screenShake = 60;
 
         for (let i = 0; i < 40; i++) {
+
             particles.push({
+
                 x: centerX,
                 y: centerY,
-                dx: (Math.random() - 0.5) * 15,
-                dy: (Math.random() - 0.5) * 15,
+
+                dx:
+                    (Math.random() - 0.5) * 15,
+
+                dy:
+                    (Math.random() - 0.5) * 15,
+
                 life: 40,
-                size: Math.random() * 10 + 4,
+
+                size:
+                    Math.random() * 10 + 4,
+
                 color: "red"
             });
         }
@@ -396,19 +465,40 @@ canvas.addEventListener("click", () => {
     // SHAKE
     screenShake = 20;
 
-    // MUZZLE FLASH PARTICLES
+    // MUZZLE FLASH
     for (let i = 0; i < 20; i++) {
+
         particles.push({
-            x: centerX + Math.cos(baseAngle) * 20,
-            y: centerY + Math.sin(baseAngle) * 20,
-            dx: Math.cos(baseAngle) * (Math.random() * 6) + (Math.random() - 0.5) * 8,
-            dy: Math.sin(baseAngle) * (Math.random() * 6) + (Math.random() - 0.5) * 8,
+
+            x:
+                centerX +
+                Math.cos(baseAngle) * 20,
+
+            y:
+                centerY +
+                Math.sin(baseAngle) * 20,
+
+            dx:
+                Math.cos(baseAngle) *
+                (Math.random() * 6) +
+
+                (Math.random() - 0.5) * 8,
+
+            dy:
+                Math.sin(baseAngle) *
+                (Math.random() * 6) +
+
+                (Math.random() - 0.5) * 8,
+
             life: 15,
-            size: Math.random() * 6 + 2,
+
+            size:
+                Math.random() * 6 + 2,
+
             color: "orange"
         });
     }
-});
+}
 
 // =========================
 // ENEMY SPAWNING
@@ -473,6 +563,23 @@ function spawnEnemy() {
                 health: 2,
                 color: "cyan",
                 shootCooldown: 0
+            };
+        }
+        else if (roll < 0.65) {
+
+            enemy = {
+                x, y,
+
+                type: "bomber",
+
+                size: 26,
+                speed: 5,
+
+                health: 1,
+
+                color: "yellow",
+
+                explodeRadius: 120
             };
         }
         // NORMAL ENEMY
@@ -570,6 +677,18 @@ function update() {
                 enemiesSpawned++;
             }
         }
+    }
+
+    // shoot on mouse hold
+    if (
+        mouseDown &&
+        Date.now() - lastShotTime >
+        currentWeapon.fireRate
+    ) {
+
+        shoot();
+
+        lastShotTime = Date.now();
     }
 
     // DASH PARTICLES
@@ -830,20 +949,27 @@ function update() {
 
             if (enemy.shootCooldown <= 0) {
                 
-                //circular attack pattern
-                for (let a = 0; a < 12; a++) {
+                //arc attack pattern
+                for (let a = -2; a < 2; a++) {
 
-                    const angle = (Math.PI * 2 / 12) * a;
+                    for (let a = -2; a <= 2; a++) {
 
-                    enemyBullets.push({
-                        x: enemy.x + enemy.size / 2,
-                        y: enemy.y + enemy.size / 2,
+                        const angle =
+                            Math.atan2(
+                                player.y - enemy.y,
+                                player.x - enemy.x
+                            ) + a * 0.25;
 
-                        dx: Math.cos(angle) * 5,
-                        dy: Math.sin(angle) * 5,
+                        enemyBullets.push({
+                            x: enemy.x + enemy.size / 2,
+                            y: enemy.y + enemy.size / 2,
 
-                        size: 14
-                    });
+                            dx: Math.cos(angle) * 5,
+                            dy: Math.sin(angle) * 5,
+
+                            size: 14
+                        });
+                    }
                 }
 
                 //spiral attack pattern
@@ -862,7 +988,7 @@ function update() {
                     });
                 }
 
-                enemy.shootCooldown = enemy.phase === 1 ? 90 : 40;
+                enemy.shootCooldown = 90;
 
                 screenShake = 20;
             }
@@ -876,6 +1002,23 @@ function update() {
         if (playerDistance < 30 && dashTimer <= 0) {
             player.health -= 1;
             screenShake = 15;
+
+            if (enemy.type === "bomber") {
+
+                explosions.push({
+                    x: enemy.x,
+                    y: enemy.y,
+
+                    radius: enemy.explodeRadius,
+
+                    damage: 6,
+
+                    life: 20
+                });
+                enemies.splice(i, 1);
+                screenShake = 50;
+                continue;
+            }
 
             if (player.health <= 0) {
                 alert("Game Over! Score: " + score);
@@ -897,6 +1040,17 @@ function update() {
 
                 freezeFrames = 4;
                 enemy.health -= bullet.damage * damageMultiplier;
+                damageTexts.push({
+
+                    x: enemy.x,
+                    y: enemy.y,
+
+                    text: Math.floor(
+                        bullet.damage * damageMultiplier
+                    ),
+
+                    life: 40
+                });
                 bullets.splice(j, 1);
                 if (bullet.explosive) {
                     explosions.push({
@@ -984,7 +1138,26 @@ function update() {
                     enemy.health -= explosion.damage;
 
                     if (enemy.health <= 0) {
+
+                        // BOMBER CHAIN EXPLOSION
+                        if (enemy.type === "bomber") {
+
+                            explosions.push({
+                                x: enemy.x,
+                                y: enemy.y,
+
+                                radius: enemy.explodeRadius,
+
+                                damage: 6,
+
+                                life: 20
+                            });
+
+                            screenShake = 40;
+                        }
+
                         enemies.splice(i, 1);
+
                         score++;
                     }
                 }
@@ -1072,6 +1245,21 @@ function update() {
 
         if (particle.life <= 0) {
             particles.splice(i, 1);
+        }
+    }
+
+    // =========================
+    // UPDATE DAMAGE TEXTS
+    // =========================
+    for (let i = damageTexts.length - 1; i >= 0; i--) {
+
+        const d = damageTexts[i];
+
+        d.y -= 1;
+        d.life--;
+
+        if (d.life <= 0) {
+            damageTexts.splice(i, 1);
         }
     }
 
@@ -1183,6 +1371,12 @@ function draw() {
 
     // DRAW ENEMIES
     for (const enemy of enemies) {
+        if (enemy.type === "bomber") {
+            ctx.fillStyle =
+                Math.floor(frameCount / 6) % 2
+                ? "red"
+                : "yellow";
+        }
         if (enemy.type === "boss" && enemy.phase === 2) {
             ctx.fillStyle = "orange";
         }
@@ -1254,6 +1448,24 @@ function draw() {
         ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
     }
     ctx.globalAlpha = 1;
+
+    // DRAW DAMAGE TEXTS
+    for (const d of damageTexts) {
+
+        ctx.globalAlpha = d.life / 40;
+
+        ctx.fillStyle = "white";
+
+        ctx.font = "24px Arial";
+
+        ctx.fillText(
+            d.text,
+            d.x,
+            d.y
+        );
+
+        ctx.globalAlpha = 1;
+    }
 
     // DRAW SPAWN WARNING SYSTEM
     for (let i = spawnWarnings.length - 1; i >= 0; i--) {
