@@ -394,7 +394,7 @@ let difficultySettings = {
             }
 
             dashTimer = 10;
-            dashCooldown = 60;
+            dashCooldown = 120;
             screenShake = 15;
         }
 
@@ -1796,7 +1796,7 @@ ctx.fillText(
         ctx.fillStyle = "gray";
         ctx.fillRect(20, 190, 200, 20);
         ctx.fillStyle = "cyan";
-        ctx.fillRect(20, 190, 200 * (1 - dashCooldown / 60), 20);
+        ctx.fillRect(20, 190, 200 * (1 - dashCooldown / 120), 20);
 
         // BOSS HEALTH BAR
         const boss = enemies.find(e => e.type === "boss");
