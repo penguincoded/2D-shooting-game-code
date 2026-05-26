@@ -50,6 +50,7 @@
     let coins = 0;
     let notification = "";
     let notificationTimer = 0;
+    let shopOpen = false;
 
     let gameMode = "normal";
 
@@ -75,6 +76,8 @@ let difficultySettings = {
         coinMultiplier: 0.8
     }
 };
+
+    let playerIFrames = 0;
 
     // =========================
     // WAVE SYSTEM
@@ -279,11 +282,17 @@ let difficultySettings = {
             if (e.key === "4") applyPerk(perkChoices[3]);
             return;
         }
-        
-        if (waveRest && gameStarted) {
+        // SHOP TOGGLE
+if (e.key.toLowerCase() === "b") {
+
+    shopOpen = !shopOpen;
+
+    return;
+}
+        if (shopOpen) {
 
     // BUY SHOTGUN
-    if (e.key === "2") {
+    if (e.key === "1") {
 
         if (!unlockedWeapons.shotgun &&
             coins >= shopItems.shotgun) {
@@ -294,10 +303,13 @@ let difficultySettings = {
 
             showNotification("SHOTGUN BOUGHT");
         }
+        else {
+            showNotification("NOT ENOUGH COINS");
+        }
     }
 
     // BUY SMG
-    if (e.key === "3") {
+    if (e.key === "2") {
 
         if (!unlockedWeapons.smg &&
             coins >= shopItems.smg) {
@@ -308,10 +320,13 @@ let difficultySettings = {
 
             showNotification("SMG BOUGHT");
         }
+        else {
+            showNotification("NOT ENOUGH COINS");
+        }
     }
 
     // HEAL
-    if (e.key === "h") {
+    if (e.key === "3") {
 
         if (coins >= shopItems.heal) {
 
@@ -328,7 +343,7 @@ let difficultySettings = {
     }
 
     // AMMO
-    if (e.key === "b") {
+    if (e.key === "4") {
 
         if (coins >= shopItems.ammo) {
 
@@ -340,6 +355,8 @@ let difficultySettings = {
             showNotification("AMMO REFILLED");
         }
     }
+
+    return;
 }
         // =========================
         // PAUSE MENU INPUTS
@@ -398,6 +415,7 @@ let difficultySettings = {
             screenShake = 15;
         }
 
+        
         // =========================
         // WEAPON SWITCHING
         // =========================
@@ -510,6 +528,7 @@ let difficultySettings = {
     // MOUSE EVENT
     // =========================
     canvas.addEventListener("mousemove", e => {
+        if(paused || choosingPerk || shopOpen) return;
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left;
         mouse.y = e.clientY - rect.top;
@@ -734,6 +753,7 @@ let difficultySettings = {
                     size: 32,
                     speed: 2,
                     health: 2,
+                    maxHealth: 2,
                     color: "red"
                 };
             }
@@ -745,6 +765,7 @@ let difficultySettings = {
                     size: 20,
                     speed: 4,
                     health: 1,
+                    maxHealth: 1,
                     color: "orange"
                 };
             }
@@ -756,6 +777,7 @@ let difficultySettings = {
                     size: 28,
                     speed: 1.5,
                     health: 2,
+                    maxHealth: 2,
                     color: "cyan",
                     shootCooldown: 0
                 };
@@ -768,6 +790,7 @@ let difficultySettings = {
                     size: 50,
                     speed: 1,
                     health: 5,
+                    maxHealth: 5,
                     color: "purple"
                 };
             }
@@ -779,12 +802,14 @@ let difficultySettings = {
                     size: 26,
                     speed: 5,
                     health: 1,
+                    maxHealth: 1,
                     color: "yellow",
                     explodeRadius: 120
                 };
             }
             
             enemy.health *= difficultySettings[gameMode].enemyHealthMultiplier;
+            enemy.maxHealth *= difficultySettings[gameMode].enemyHealthMultiplier;
             enemies.push(enemy);
         }, 1000);
     }
@@ -844,7 +869,7 @@ let difficultySettings = {
     // GAME LOGIC UPDATE
     // =========================
     function update() {
-        if (!gameStarted || paused || choosingPerk) return;
+        if (!gameStarted || paused || choosingPerk || shopOpen) return;
 
         // =========================
         // REST TIMER
@@ -874,13 +899,25 @@ let difficultySettings = {
         // WAVE SPAWNING
         // =========================
         if (!waveRest) {
-            if (enemiesSpawned < enemiesToSpawn && enemies.length < difficultySettings[gameMode].enemyCap) {
-                if (Math.random() < difficultySettings[gameMode].spawnRate) {
-                    spawnEnemy();
-                    enemiesSpawned++;
-                }
-            }
+
+    const spawnRate =
+        bossActive
+        ? difficultySettings[gameMode].spawnRate * 0.3
+        : difficultySettings[gameMode].spawnRate;
+
+    if (
+        enemiesSpawned < enemiesToSpawn &&
+        enemies.length < difficultySettings[gameMode].enemyCap
+    ) {
+
+        if (Math.random() < spawnRate) {
+
+            spawnEnemy();
+
+            enemiesSpawned++;
         }
+    }
+}
 
         // shoot on mouse hold
         if (
@@ -1202,8 +1239,9 @@ let difficultySettings = {
             const pdy = player.y - enemy.y;
             const playerDistance = Math.sqrt(pdx * pdx + pdy * pdy);
 
-            if (playerDistance < 30 && dashTimer <= 0) {
+            if (playerDistance < 30 && dashTimer <= 0 && playerIFrames <= 0) {
                 player.health -= 1;
+                playerIFrames = 30;
                 screenShake = 15;
 
                 if (enemy.type === "bomber") {
@@ -1249,7 +1287,7 @@ let difficultySettings = {
                         y: enemy.y,
 
                         text: Math.floor(
-                            bullet.damage * damageMultiplier
+                            bullet.damage * damageMultiplier * 10
                         ),
 
                         life: 40
@@ -1272,6 +1310,18 @@ let difficultySettings = {
                     if (enemy.health <= 0) {
                         if (enemy.type === "boss") {
                             bossActive = false;
+
+                            if (wave == 5) {
+
+                                unlockedWeapons.sniper = true;
+                                showNotification("SNIPER UNLOCKED");
+                            }
+
+                            if (wave == 10) {
+
+                                unlockedWeapons.rocket = true;
+                                showNotification("ROCKET LAUNCHER UNLOCKED");
+                            }
 
                             for (let p = 0; p < 150; p++) {
                                 particles.push({
@@ -1380,9 +1430,10 @@ const pdy = player.y - explosion.y;
 const playerDistance =
     Math.sqrt(pdx * pdx + pdy * pdy);
 
-if (playerDistance < explosion.radius) {
+if (playerDistance < explosion.radius && playerIFrames <= 0) {
 
     player.health -= explosion.damage;
+    playerIFrames = 30;
 
     screenShake = 40;
 
@@ -1512,6 +1563,9 @@ if (playerDistance < explosion.radius) {
             player.health = Math.min(player.health + 20, player.maxHealth);
         }
 
+        if (playerIFrames > 0) {
+            playerIFrames--;
+        }
         screenShake *= 0.9;
     }
 
@@ -1528,7 +1582,11 @@ if (playerDistance < explosion.radius) {
         ctx.rotate(angle);
 
         // Body Shape
-        ctx.fillStyle = "lime";
+        ctx.fillStyle =
+    playerIFrames > 0 &&
+    Math.floor(frameCount / 4) % 2
+    ? "white"
+    : "lime";
         ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
 
         // Gun Line
@@ -1536,6 +1594,83 @@ if (playerDistance < explosion.radius) {
         ctx.fillRect(0, -4, 20, 8);
         ctx.restore();
     }
+    // =========================
+    // MINIMAP DRAW
+    // =========================
+
+    function drawMinimap() {
+
+    const mapWidth = 180;
+    const mapHeight = 100;
+
+    const mapX = canvas.width - mapWidth - 20;
+    const mapY = 20;
+
+    // BACKGROUND
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(
+        mapX,
+        mapY,
+        mapWidth,
+        mapHeight
+    );
+
+    // BORDER
+    ctx.strokeStyle = "white";
+    ctx.strokeRect(
+        mapX,
+        mapY,
+        mapWidth,
+        mapHeight
+    );
+
+    // PLAYER
+    const playerMapX =
+        mapX +
+        (player.x / canvas.width) *
+        mapWidth;
+
+    const playerMapY =
+        mapY +
+        (player.y / canvas.height) *
+        mapHeight;
+
+    ctx.fillStyle = "lime";
+
+    ctx.fillRect(
+        playerMapX - 3,
+        playerMapY - 3,
+        6,
+        6
+    );
+
+    // ENEMIES
+    for (const enemy of enemies) {
+
+        const enemyMapX =
+            mapX +
+            (enemy.x / canvas.width) *
+            mapWidth;
+
+        const enemyMapY =
+            mapY +
+            (enemy.y / canvas.height) *
+            mapHeight;
+
+        ctx.fillStyle =
+            enemy.type === "boss"
+            ? "purple"
+            : "red";
+
+        ctx.fillRect(
+            enemyMapX - 2,
+            enemyMapY - 2,
+            4,
+            4
+        );
+    }
+}
+
 
     // =========================
     // CORE RENDER (DRAW)
@@ -1625,8 +1760,30 @@ if (playerDistance < explosion.radius) {
                 Math.floor(frameCount / 5) % 2
                 ? "white"
                 : "red";
-        }
+            }
             ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+            // HEALTH BAR BACKGROUND
+            ctx.fillStyle = "black";
+
+            ctx.fillRect(
+                enemy.x,
+                enemy.y - 10,
+                enemy.size,
+                6
+            );
+
+            // HEALTH BAR
+            ctx.fillStyle = "lime";
+
+            ctx.fillRect(
+                enemy.x,
+                enemy.y - 10,
+
+                enemy.size *
+                (enemy.health / enemy.maxHealth),
+
+                6
+            );
         }
 
         // DRAW DROPS
@@ -1718,6 +1875,7 @@ if (playerDistance < explosion.radius) {
         }
         ctx.textAlign = "left";
         ctx.restore();
+        drawMinimap();
 
         // =========================
         // LAYER 2: HEADS UP DISPLAY (UI)
@@ -1746,45 +1904,98 @@ if (playerDistance < explosion.radius) {
 
 ctx.font = "24px Arial";
 
-ctx.fillText(
-    "SHOP",
-    canvas.width / 2 - 40,
-    140
-);
 
-ctx.fillText(
-    "2 - Shotgun ($200)",
-    canvas.width / 2 - 120,
-    190
-);
-
-ctx.fillText(
-    "3 - SMG ($350)",
-    canvas.width / 2 - 120,
-    230
-);
-ctx.fillText(
-    "4 - Sniper ($500)",
-    canvas.width / 2 - 120,
-    270
-);
-ctx.fillText(
-    "5 - Rocket Launcher ($800)",
-    canvas.width / 2 - 120,
-    310
-);
-ctx.fillText(
-    "H - Heal ($100)",
-    canvas.width / 2 - 120,
-    350
-);
-
-ctx.fillText(
-    "B - Ammo ($80)",
-    canvas.width / 2 - 120,
-    390
-);
         }
+        if (shopOpen) {
+
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(200, 70, 560, 400);
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(200, 70, 560, 400);
+
+    // TITLE
+    ctx.fillStyle = "yellow";
+    ctx.font = "46px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        "SHOP",
+        canvas.width / 2,
+        130
+    );
+
+    // COINS
+    ctx.fillStyle = "white";
+    ctx.font = "28px Arial";
+
+    ctx.fillText(
+        "Coins: " + coins,
+        canvas.width / 2,
+        180
+    );
+
+    // ITEMS
+    ctx.textAlign = "left";
+
+    ctx.font = "26px Arial";
+
+    let startX = 250;
+    let startY = 240;
+    let gap = 55;
+
+    ctx.fillStyle =
+        unlockedWeapons.shotgun
+        ? "gray"
+        : "white";
+
+    ctx.fillText(
+        "1 - Shotgun ($200)",
+        startX,
+        startY
+    );
+
+    ctx.fillStyle =
+        unlockedWeapons.smg
+        ? "gray"
+        : "white";
+
+    ctx.fillText(
+        "2 - SMG ($350)",
+        startX,
+        startY + gap
+    );
+
+    ctx.fillStyle = "lime";
+
+    ctx.fillText(
+        "3 - Heal +40 HP ($100)",
+        startX,
+        startY + gap * 2
+    );
+
+    ctx.fillStyle = "cyan";
+
+    ctx.fillText(
+        "4 - Full Ammo ($80)",
+        startX,
+        startY + gap * 3
+    );
+
+    // INFO
+    ctx.fillStyle = "white";
+    ctx.font = "22px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        "Press B to close",
+        canvas.width / 2,
+        430
+    );
+
+    ctx.textAlign = "left";
+}
 
         // STATUS MESSAGES
         if (reloading) {
@@ -1914,8 +2125,7 @@ ctx.fillText(
                 "3 - SMG",
                 "4 - Sniper",
                 "5 - Rocket Launcher",
-                "H - Heal (Shop)",
-                "B - Ammo (Shop)",
+                "B - Open Shop (During Wave Breaks)",
                 "ESC - Pause"
             ];
 
