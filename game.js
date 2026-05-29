@@ -13,54 +13,94 @@
     const hitSound = new Audio("assets/hit.wav");
 
     // =========================
-    // PLAYER
-    // =========================
-    const player = {
-        x: 450,
-        y: 250,
-        size: 32,
-        speed: 5,
-        health: 100,
-        maxHealth: 100
-    };
+// PLAYER
+// =========================
 
-    // =========================
-    // ARRAYS
-    // =========================
-    const bullets = [];
-    const enemies = [];
-    const particles = [];
-    const damageTexts = [];
-    const coinTexts = [];
-    const drops = [];
-    const explosions = [];
-    const shockwaves = [];
-    const enemyBullets = [];
+const player = {
+    x: 450,
+    y: 250,
 
-    // =========================
-    // GAME STATE
-    // =========================
-    let score = 0;
-    let frameCount = 0;
-    let screenShake = 0;
-    let freezeFrames = 0;
-    let dashCooldown = 0;
-    let dashTimer = 0;
-    let reloading = false;
-    let reloadInterval = null;
-    let bossActive = false;
-    let lastShotTime = 0;
-    let coins = 0;
-    let notification = "";
-    let notificationTimer = 0;
-    let shopOpen = false;
-    let controlsScroll = 0;
-    let critChance = 0.05;
-    let critMultiplier = 2;
+    // SIZE / MOVEMENT
+    size: 32,
+    speed: 5,
 
-    let gameMode = "normal";
+    // HEALTH
+    health: 100,
+    maxHealth: 100
+};
 
-let difficultySettings = {
+// =========================
+// GAME ARRAYS
+// =========================
+
+// COMBAT
+const bullets = [];
+const enemyBullets = [];
+const enemies = [];
+
+// VISUAL EFFECTS
+const particles = [];
+const explosions = [];
+const shockwaves = [];
+
+// UI EFFECTS
+const damageTexts = [];
+const coinTexts = [];
+
+// DROPS / ITEMS
+const drops = [];
+
+// =========================
+// GAME STATE
+// =========================
+
+// SCORE / PROGRESSION
+let score = 0;
+let coins = 0;
+let frameCount = 0;
+
+// COMBAT EFFECTS
+let screenShake = 0;
+let freezeFrames = 0;
+let hitmarkerTimer = 0;
+let damageFlash = 0;
+
+// PLAYER MOVEMENT
+let dashCooldown = 0;
+let dashTimer = 0;
+let playerIFrames = 0;
+
+// WEAPON SYSTEM
+let reloading = false;
+let reloadInterval = null;
+let lastShotTime = 0;
+
+// CRITICAL HIT SYSTEM
+let critChance = 0.05;
+let critMultiplier = 2;
+
+// CROSSHAIR
+let crosshairSize = 12;
+let crosshairSpread = 0;
+
+// GAME EVENTS
+let bossActive = false;
+let notification = "";
+let notificationTimer = 0;
+
+// MENUS / UI
+let shopOpen = false;
+let controlsScroll = 0;
+
+// GAME MODE
+let gameMode = "normal";
+
+// =========================
+// DIFFICULTY SETTINGS
+// =========================
+
+const difficultySettings = {
+
     easy: {
         enemyCap: 10,
         spawnRate: 0.010,
@@ -83,25 +123,29 @@ let difficultySettings = {
     }
 };
 
-    let playerIFrames = 0;
+    // =========================
+// WAVE SYSTEM
+// =========================
 
-    // =========================
-    // WAVE SYSTEM
-    // =========================
-    let wave = 1;
-    let enemiesToSpawn = 5;
-    let enemiesSpawned = 0;
-    let waveRest = true;
-    let restTimer = 5;
-    let pendingBossWave = false;
+let wave = 1;
 
-    const spawnWarnings = [];
+let enemiesToSpawn = 5;
+let enemiesSpawned = 0;
 
-    // =========================
-    // PERKS
-    // =========================
-    let choosingPerk = false;
-    const perkChoices = [
+let waveRest = true;
+let restTimer = 5;
+
+let pendingBossWave = false;
+
+const spawnWarnings = [];
+
+// =========================
+// PERK SYSTEM
+// =========================
+
+let choosingPerk = false;
+
+const perkChoices = [
     "More Health",
     "Faster Reload",
     "Speed Up",
@@ -109,116 +153,177 @@ let difficultySettings = {
     "Crit Chance Up",
     "Crit Multiplier Up"
 ];
-    let damageMultiplier = 1;
-    let reloadMultiplier = 1;
-    // =========================
-    // SHOP ITEMS
-    // =========================
-    const shopItems = {
 
-        shotgun: 200,
-        smg: 350,
-        sniper: 500,
-        rocket: 900,
+// PERK STATS
+let damageMultiplier = 1;
+let reloadMultiplier = 1;
 
-        heal: 100,
-        ammo: 80
-    };
-    // =========================
+// =========================
+// SHOP SYSTEM
+// =========================
+
+const shopItems = {
+
     // WEAPONS
-    // =========================
+    shotgun: 200,
+    smg: 350,
+    sniper: 500,
+    rocket: 900,
 
-    const unlockedWeapons = {
-        pistol: true,
-        shotgun: false,
-        smg: false,
-        sniper: false,
-        rocket: false
-    };
-    const weapons = {
-        pistol: {
-            name: "Pistol",
-            damage: 1,
-            fireRate: 300,
-            bulletSpeed: 18,
-            bulletCount: 1,
-            bulletSize: 6,
-            spread: 0.05,
-            maxAmmo: 12,
-            ammo: 12,
-            reserveAmmo: 60,
-            maxReserveAmmo: 120,
-            reloadTime: 1000,
-            color: "yellow"
-        },
+    // SUPPLIES
+    heal: 100,
+    ammo: 80
+};
 
-        shotgun: {
-            name: "Shotgun",
-            damage: 1.5,
-            fireRate: 700,
-            bulletSpeed: 16,
-            bulletCount: 6,
-            bulletSize: 4,
-            spread: 0.35,
-            maxAmmo: 5,
-            ammo: 5,
-            reserveAmmo: 30,
-            maxReserveAmmo: 60,
-            reloadTime: 400,
-            color: "orange"
-        },
+// =========================
+// WEAPON UNLOCKS
+// =========================
 
-        smg: {
-            name: "SMG",
-            damage: 0.5,
-            fireRate: 100,
-            bulletSpeed: 20,
-            bulletCount: 1,
-            bulletSize: 7,
-            spread: 0.12,
-            maxAmmo: 30,
-            ammo: 30,
-            reserveAmmo: 120,
-            maxReserveAmmo: 240,
-            reloadTime: 1400,
-            color: "cyan"
-        },
-        sniper: {
-            name: "Sniper",
-            damage: 8,
-            fireRate: 1200,
-            bulletSpeed: 30,
-            bulletCount: 1,
-            bulletSize: 5,
-            spread: 0,
-            maxAmmo: 3,
-            ammo: 3,
-            reserveAmmo: 15,
-            maxReserveAmmo: 30,
-            reloadTime: 1800,
-            color: "white"
-        },
-        rocket: {
+const unlockedWeapons = {
+    pistol: true,
+    shotgun: false,
+    smg: false,
+    sniper: false,
+    rocket: false
+};
+
+// =========================
+// WEAPONS
+// =========================
+
+const weapons = {
+
+    // PISTOL
+    pistol: {
+        name: "Pistol",
+
+        damage: 1,
+        fireRate: 300,
+
+        bulletSpeed: 18,
+        bulletCount: 1,
+        bulletSize: 6,
+
+        spread: 0.05,
+        range: 700,
+
+        maxAmmo: 12,
+        ammo: 12,
+
+        reserveAmmo: 60,
+        maxReserveAmmo: 120,
+
+        reloadTime: 1000,
+
+        color: "yellow"
+    },
+
+    // SHOTGUN
+    shotgun: {
+        name: "Shotgun",
+
+        damage: 1.5,
+        fireRate: 700,
+
+        bulletSpeed: 16,
+        bulletCount: 6,
+        bulletSize: 4,
+
+        spread: 0.35,
+        range: 400,
+
+        maxAmmo: 5,
+        ammo: 5,
+
+        reserveAmmo: 30,
+        maxReserveAmmo: 60,
+
+        reloadTime: 400,
+
+        color: "orange"
+    },
+
+    // SMG
+    smg: {
+        name: "SMG",
+
+        damage: 0.5,
+        fireRate: 100,
+
+        bulletSpeed: 20,
+        bulletCount: 1,
+        bulletSize: 7,
+
+        spread: 0.12,
+        range: 1000,
+
+        maxAmmo: 30,
+        ammo: 30,
+
+        reserveAmmo: 120,
+        maxReserveAmmo: 240,
+
+        reloadTime: 1400,
+
+        color: "cyan"
+    },
+
+    // SNIPER
+    sniper: {
+        name: "Sniper",
+
+        damage: 8,
+        fireRate: 1200,
+
+        bulletSpeed: 30,
+        bulletCount: 1,
+        bulletSize: 5,
+
+        spread: 0,
+        range: 2000,
+
+        maxAmmo: 3,
+        ammo: 3,
+
+        reserveAmmo: 15,
+        maxReserveAmmo: 30,
+
+        reloadTime: 1800,
+
+        color: "white"
+    },
+
+    // ROCKET LAUNCHER
+    rocket: {
         name: "Rocket Launcher",
-            damage: 6,
-            fireRate: 900,
-            bulletSpeed: 10,
-            bulletCount: 1,
-            bulletSize: 10,
-            spread: 0,
-            maxAmmo: 1,
-            ammo: 1,
-            reserveAmmo: 5,
-            maxReserveAmmo: 10,
-            reloadTime: 1600,
-            color: "red",
+
+        damage: 6,
+        fireRate: 900,
+
+        bulletSpeed: 10,
+        bulletCount: 1,
+        bulletSize: 10,
+
+        spread: 0,
+        range: 1200,
+
+        maxAmmo: 1,
+        ammo: 1,
+
+        reserveAmmo: 5,
+        maxReserveAmmo: 10,
+
+        reloadTime: 1600,
+
+        color: "red",
 
         explosive: true,
         explosionRadius: 120
-        }
-    };
+    }
+};
 
-    let currentWeapon = weapons.pistol;
+// CURRENT WEAPON
+let currentWeapon = weapons.pistol;
 
     // =========================
     // MENUS
@@ -649,7 +754,9 @@ else {
                 explosionRadius:
                     currentWeapon.explosionRadius || 0,
 
-                trail: []
+                trail: [],
+                distance: 0,
+                maxdistance: currentWeapon.range
             });
         }
 
@@ -721,6 +828,7 @@ else {
                 color: "orange"
             });
         }
+        crosshairSpread = 14;
     }
 
     // =========================
@@ -1061,6 +1169,10 @@ if (Math.random() < 0.12) {
 
             bullet.x += bullet.dx;
             bullet.y += bullet.dy;
+            bullet.distance += Math.hypot(
+                bullet.dx,
+                bullet.dy
+            );
 
             const dx = bullet.x - player.x;
             const dy = bullet.y - player.y;
@@ -1069,6 +1181,7 @@ if (Math.random() < 0.12) {
             if (distance < 20) {
 
                 player.health -= 10;
+                damageFlash = 10;
 
                 screenShake = 25;
 
@@ -1084,7 +1197,8 @@ if (Math.random() < 0.12) {
                 bullet.x < 0 ||
                 bullet.x > canvas.width ||
                 bullet.y < 0 ||
-                bullet.y > canvas.height
+                bullet.y > canvas.height ||
+                bullet.distance >= bullet.maxDistance
             ) {
                 enemyBullets.splice(i, 1);
             }
@@ -1287,6 +1401,7 @@ if (Math.random() < 0.12) {
 
             if (playerDistance < 30 && dashTimer <= 0 && playerIFrames <= 0) {
                 player.health -= 1;
+                damageFlash = 10;
                 playerIFrames = 30;
                 screenShake = 15;
 
@@ -1326,6 +1441,7 @@ if (Math.random() < 0.12) {
                     h.play();
 
                     freezeFrames = 4;
+                    hitmarkerTimer = 6;
                     let finalDamage =
     bullet.damage * damageMultiplier;
 
@@ -1651,6 +1767,7 @@ for (let i = coinTexts.length - 1; i >= 0; i--) {
             playerIFrames--;
         }
         screenShake *= 0.9;
+        crosshairSpread *= 0.85;
     }
 
     // =========================
@@ -1822,23 +1939,82 @@ ctx.fillRect(
         drawPlayer();
 
         // DRAW BULLETS & TRAILS
-        for (const bullet of bullets) {
-            for (let i = 0; i < bullet.trail.length; i++) {
-                const t = bullet.trail[i];
-                ctx.globalAlpha = i / bullet.trail.length;
-                ctx.fillStyle = "orange";
-                ctx.fillRect(t.x, t.y, bullet.size, bullet.size);
-            }
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(bullet.x, bullet.y, bullet.size, bullet.size);
-        }
-        for (const bullet of enemyBullets) {
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
+// DRAW BULLETS & TRAILS
+for (const bullet of bullets) {
+
+    // FADE BASED ON RANGE
+    ctx.globalAlpha =
+        1 - (
+            bullet.distance /
+            bullet.maxDistance
+        );
+
+    // TRAIL
+    for (let i = 0; i < bullet.trail.length; i++) {
+
+        const t = bullet.trail[i];
+
+        ctx.globalAlpha =
+            (i / bullet.trail.length) *
+            (
+                1 - (
+                    bullet.distance /
+                    bullet.maxDistance
+                )
+            );
+
+        ctx.fillStyle = "orange";
+
+        ctx.fillRect(
+            t.x,
+            t.y,
+            bullet.size,
+            bullet.size
+        );
+    }
+
+    // MAIN BULLET
+    ctx.globalAlpha =
+        1 - (
+            bullet.distance /
+            bullet.maxDistance
+        );
+
+    ctx.fillStyle = "yellow";
+
+    ctx.fillRect(
+        bullet.x,
+        bullet.y,
+        bullet.size,
+        bullet.size
+    );
+}
+
+// RESET ALPHA
+ctx.globalAlpha = 1;
+
+// =========================
+// DRAW ENEMY BULLETS
+// =========================
+for (const bullet of enemyBullets) {
+
+    ctx.fillStyle = "red";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        bullet.x,
+        bullet.y,
+        bullet.size,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+}
+
+// RESET ALPHA
+ctx.globalAlpha = 1;
 
         // DRAW ENEMIES
         for (const enemy of enemies) {
@@ -2308,20 +2484,42 @@ for (const c of coinTexts) {
 
             ctx.font = "30px Arial";
 
-            ctx.fillStyle = "rgba(255,255,255,0.08)";
-            ctx.fillRect(canvas.width / 2 - 120, 190, 240, 40);
-            ctx.fillStyle = "white";
-            ctx.fillText("1 - Resume", canvas.width / 2, 240);
-            
-            ctx.fillStyle = "rgba(255,255,255,0.08)";
-            ctx.fillRect(canvas.width / 2 - 120, 240, 240, 40);
-            ctx.fillStyle = "white";
-            ctx.fillText("2 - Controls", canvas.width / 2, 300);
+            const pauseButtons = [
+    "1 - Resume",
+    "2 - Controls",
+    "3 - Home Screen"
+];
 
-            ctx.fillStyle = "rgba(255,255,255,0.08)";
-            ctx.fillRect(canvas.width / 2 - 120, 300, 240, 40);
-            ctx.fillStyle = "white";
-            ctx.fillText("3 - Home Screen", canvas.width / 2, 360);
+for (let i = 0; i < pauseButtons.length; i++) {
+
+    const y = 210 + i * 80;
+
+    // BOX
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+
+    ctx.beginPath();
+    ctx.roundRect(
+        canvas.width / 2 - 170,
+        y,
+        340,
+        55,
+        12
+    );
+    ctx.fill();
+
+    // BORDER
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.stroke();
+
+    // TEXT
+    ctx.fillStyle = "white";
+
+    ctx.fillText(
+        pauseButtons[i],
+        canvas.width / 2,
+        y + 37
+    );
+}
 
             ctx.textAlign = "left";
         }
@@ -2388,15 +2586,108 @@ ctx.lineWidth = 2;
 ctx.strokeStyle = "white";
 ctx.lineWidth = 2;
 
+// draw flash effect on hit
+if (damageFlash > 0) {
+
+    ctx.fillStyle =
+        "rgba(255,0,0," +
+        (damageFlash / 40) +
+        ")";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    damageFlash--;
+}
+
+// HITMARKER DISPLAY
+
+if (hitmarkerTimer > 0) {
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
+
+    const size = 12;
+
+    ctx.beginPath();
+
+    ctx.moveTo(mouse.x - size, mouse.y - size);
+    ctx.lineTo(mouse.x - 4, mouse.y - 4);
+
+    ctx.moveTo(mouse.x + size, mouse.y - size);
+    ctx.lineTo(mouse.x + 4, mouse.y - 4);
+
+    ctx.moveTo(mouse.x - size, mouse.y + size);
+    ctx.lineTo(mouse.x - 4, mouse.y + 4);
+
+    ctx.moveTo(mouse.x + size, mouse.y + size);
+    ctx.lineTo(mouse.x + 4, mouse.y + 4);
+
+    ctx.stroke();
+
+    hitmarkerTimer--;
+}
+
+// =========================
+// CROSSHAIR
+// =========================
+
+ctx.save();
+
+ctx.translate(mouse.x, mouse.y);
+
+// COLOR STATES
+if (reloading) {
+    ctx.strokeStyle = "yellow";
+}
+else if (currentWeapon === weapons.sniper) {
+    ctx.strokeStyle = "cyan";
+}
+else {
+    ctx.strokeStyle = "white";
+}
+
+ctx.lineWidth = 3;
+
+const size =
+    crosshairSize + crosshairSpread;
+
+// LEFT
 ctx.beginPath();
-
-ctx.moveTo(mouse.x - 10, mouse.y);
-ctx.lineTo(mouse.x + 10, mouse.y);
-
-ctx.moveTo(mouse.x, mouse.y - 10);
-ctx.lineTo(mouse.x, mouse.y + 10);
-
+ctx.moveTo(-size, 0);
+ctx.lineTo(-4, 0);
 ctx.stroke();
+
+// RIGHT
+ctx.beginPath();
+ctx.moveTo(4, 0);
+ctx.lineTo(size, 0);
+ctx.stroke();
+
+// TOP
+ctx.beginPath();
+ctx.moveTo(0, -size);
+ctx.lineTo(0, -4);
+ctx.stroke();
+
+// BOTTOM
+ctx.beginPath();
+ctx.moveTo(0, 4);
+ctx.lineTo(0, size);
+ctx.stroke();
+
+// CENTER DOT
+ctx.fillStyle = ctx.strokeStyle;
+
+ctx.beginPath();
+ctx.arc(0, 0, 2, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.restore();
     }
 
     // =========================
