@@ -29,6 +29,7 @@
     const enemies = [];
     const particles = [];
     const damageTexts = [];
+    const coinTexts = [];
     const drops = [];
     const explosions = [];
     const shockwaves = [];
@@ -51,6 +52,9 @@
     let notification = "";
     let notificationTimer = 0;
     let shopOpen = false;
+    let controlsScroll = 0;
+    let critChance = 0.05;
+    let critMultiplier = 2;
 
     let gameMode = "normal";
 
@@ -96,10 +100,12 @@ let difficultySettings = {
     // =========================
     let choosingPerk = false;
     const perkChoices = [
-        "More Health",
-        "Faster Reload",
-        "Speed Up",
-        "More Damage"
+        "More Health       ",
+        "Faster Reload     ",
+        "Speed Up          ",
+        "More Damage       ",
+        "Crit Chance Up    ",
+        "Crit Multiplier Up"
     ];
     let damageMultiplier = 1;
     let reloadMultiplier = 1;
@@ -280,6 +286,8 @@ let difficultySettings = {
             if (e.key === "2") applyPerk(perkChoices[1]);
             if (e.key === "3") applyPerk(perkChoices[2]);
             if (e.key === "4") applyPerk(perkChoices[3]);
+            if (e.key === "5") applyPerk(perkChoices[4]);
+            if (e.key === "6") applyPerk(perkChoices[5]);
             return;
         }
         // SHOP TOGGLE
@@ -294,35 +302,34 @@ if (e.key.toLowerCase() === "b") {
     // BUY SHOTGUN
     if (e.key === "1") {
 
-        if (!unlockedWeapons.shotgun &&
-            coins >= shopItems.shotgun) {
+        if (unlockedWeapons.shotgun) {
+    showNotification("ALREADY OWNED");
+}
+else if (coins >= shopItems.shotgun) {
 
-            coins -= shopItems.shotgun;
-
-            unlockedWeapons.shotgun = true;
-
-            showNotification("SHOTGUN BOUGHT");
-        }
-        else {
-            showNotification("NOT ENOUGH COINS");
-        }
+    coins -= shopItems.shotgun;
+    unlockedWeapons.shotgun = true;
+    showNotification("SHOTGUN BOUGHT");
+}
+else {
+    showNotification("NOT ENOUGH COINS");
+}
     }
 
     // BUY SMG
     if (e.key === "2") {
 
-        if (!unlockedWeapons.smg &&
-            coins >= shopItems.smg) {
-
-            coins -= shopItems.smg;
-
-            unlockedWeapons.smg = true;
-
-            showNotification("SMG BOUGHT");
-        }
-        else {
-            showNotification("NOT ENOUGH COINS");
-        }
+        if (unlockedWeapons.smg) {
+    showNotification("ALREADY OWNED");
+}
+else if (coins >= shopItems.smg) {
+    coins -= shopItems.smg;
+    unlockedWeapons.smg = true;
+    showNotification("SMG BOUGHT");
+}
+else {
+    showNotification("NOT ENOUGH COINS");
+}
     }
 
     // HEAL
@@ -533,6 +540,17 @@ if (e.key.toLowerCase() === "b") {
         mouse.x = e.clientX - rect.left;
         mouse.y = e.clientY - rect.top;
     });
+
+    canvas.addEventListener("wheel", e => {
+
+    if (!showControls) return;
+
+    controlsScroll += e.deltaY * 0.5;
+
+    // LIMIT SCROLL
+    controlsScroll = Math.max(0, Math.min(300, controlsScroll));
+
+});
 
     // =========================
     // SHOOTING
@@ -754,6 +772,7 @@ if (e.key.toLowerCase() === "b") {
                     speed: 2,
                     health: 2,
                     maxHealth: 2,
+                    coinReward: 10,
                     color: "red"
                 };
             }
@@ -766,6 +785,7 @@ if (e.key.toLowerCase() === "b") {
                     speed: 4,
                     health: 1,
                     maxHealth: 1,
+                    coinReward: 8,
                     color: "orange"
                 };
             }
@@ -778,6 +798,7 @@ if (e.key.toLowerCase() === "b") {
                     speed: 1.5,
                     health: 2,
                     maxHealth: 2,
+                    coinReward: 12,
                     color: "cyan",
                     shootCooldown: 0
                 };
@@ -791,6 +812,7 @@ if (e.key.toLowerCase() === "b") {
                     speed: 1,
                     health: 5,
                     maxHealth: 5,
+                    coinReward: 25,
                     color: "purple"
                 };
             }
@@ -803,6 +825,7 @@ if (e.key.toLowerCase() === "b") {
                     speed: 5,
                     health: 1,
                     maxHealth: 1,
+                    coinReward: 15,
                     color: "yellow",
                     explodeRadius: 120
                 };
@@ -810,6 +833,22 @@ if (e.key.toLowerCase() === "b") {
             
             enemy.health *= difficultySettings[gameMode].enemyHealthMultiplier;
             enemy.maxHealth *= difficultySettings[gameMode].enemyHealthMultiplier;
+            // ELITE CHANCE
+if (Math.random() < 0.12) {
+
+    enemy.elite = true;
+
+    enemy.health *= 3;
+    enemy.maxHealth *= 3;
+
+    enemy.speed *= 1.2;
+
+    enemy.size *= 1.25;
+
+    enemy.coinReward *= 3;
+
+    enemy.glow = "gold";
+}
             enemies.push(enemy);
         }, 1000);
     }
@@ -861,6 +900,12 @@ if (e.key.toLowerCase() === "b") {
         }
         if (perk === "More Damage") {
             damageMultiplier += 1;
+        }
+        if (perk === "Crit Chance Up") {
+            critChance += 0.05;
+        }
+        if (perk === "Crit Multiplier Up") {
+            critMultiplier += 0.5;
         }
         choosingPerk = false;
     }
@@ -1192,8 +1237,6 @@ if (e.key.toLowerCase() === "b") {
                     //arc attack pattern
                     for (let a = -2; a < 2; a++) {
 
-                        for (let a = -2; a <= 2; a++) {
-
                             const angle =
                                 Math.atan2(
                                     player.y - enemy.y,
@@ -1210,7 +1253,6 @@ if (e.key.toLowerCase() === "b") {
                                 size: 14
                             });
                         }
-                    }
 
                     //spiral attack pattern
                     if (enemy.phase === 2) {
@@ -1280,18 +1322,35 @@ if (e.key.toLowerCase() === "b") {
                     h.play();
 
                     freezeFrames = 4;
-                    enemy.health -= bullet.damage * damageMultiplier;
+                    let finalDamage =
+    bullet.damage * damageMultiplier;
+
+const critical =
+    Math.random() < critChance;
+
+if (critical) {
+
+    finalDamage *= critMultiplier;
+}
+
+enemy.health -= finalDamage;
                     damageTexts.push({
 
-                        x: enemy.x,
-                        y: enemy.y,
+    x: enemy.x,
+    y: enemy.y,
 
-                        text: Math.floor(
-                            bullet.damage * damageMultiplier * 10
-                        ),
+    text:
+        critical
+        ? "CRIT " + Math.floor(finalDamage * 10)
+        : Math.floor(finalDamage * 10),
 
-                        life: 40
-                    });
+    color:
+        critical
+        ? "red"
+        : "white",
+
+    life: 40
+});
                     bullets.splice(j, 1);
                     if (bullet.explosive) {
                         explosions.push({
@@ -1365,12 +1424,16 @@ if (e.key.toLowerCase() === "b") {
                                 color: enemy.color
                             });
                         }
-                        if (enemy.type === "normal") coins += Math.floor(10 * difficultySettings[gameMode].coinMultiplier);
-                        if (enemy.type === "fast") coins += Math.floor(15 * difficultySettings[gameMode].coinMultiplier);
-                        if (enemy.type === "ranged") coins += Math.floor(20 * difficultySettings[gameMode].coinMultiplier);
-                        if (enemy.type === "tank") coins += Math.floor(35 * difficultySettings[gameMode].coinMultiplier);
-                        if (enemy.type === "bomber") coins += Math.floor(25 * difficultySettings[gameMode].coinMultiplier);
-                        if (enemy.type === "boss") coins += Math.floor(250 * difficultySettings[gameMode].coinMultiplier);
+                        coins += enemy.coinReward;
+                        coinTexts.push({
+
+                            x: enemy.x,
+                            y: enemy.y - 20,
+
+                            text: "+" + (enemy.coinReward),
+
+                            life: 40
+                        });
                     }
                     break;
                 }
@@ -1540,6 +1603,23 @@ if (playerDistance < explosion.radius && playerIFrames <= 0) {
                 damageTexts.splice(i, 1);
             }
         }
+
+        // =========================
+        // UPDATE COIN TEXTS
+        // =========================
+        // UPDATE COIN TEXTS
+for (let i = coinTexts.length - 1; i >= 0; i--) {
+
+    const c = coinTexts[i];
+
+    c.y -= 1;
+    c.life--;
+
+    if (c.life <= 0) {
+
+        coinTexts.splice(i, 1);
+    }
+}
 
         // =========================
         // WAVE COMPLETE CHECK
@@ -1742,25 +1822,30 @@ if (playerDistance < explosion.radius && playerIFrames <= 0) {
 
         // DRAW ENEMIES
         for (const enemy of enemies) {
-            if (enemy.type === "bomber") {
-                ctx.fillStyle =
-                    Math.floor(frameCount / 6) % 2
-                    ? "red"
-                    : "yellow";
-            }
-            if (enemy.type === "boss" && enemy.phase === 2) {
-                ctx.fillStyle = "orange";
-            }
-            else {
-                ctx.fillStyle = enemy.color;
-            }
-            if (enemy.warning) {
+            if (enemy.elite) {
 
-            ctx.fillStyle =
-                Math.floor(frameCount / 5) % 2
-                ? "white"
-                : "red";
-            }
+    ctx.shadowColor = enemy.glow;
+    ctx.shadowBlur = 25;
+}
+            ctx.fillStyle = enemy.color;
+
+if (enemy.type === "bomber") {
+    ctx.fillStyle =
+        Math.floor(frameCount / 6) % 2
+        ? "red"
+        : "yellow";
+}
+
+if (enemy.type === "boss" && enemy.phase === 2) {
+    ctx.fillStyle = "orange";
+}
+
+if (enemy.warning) {
+    ctx.fillStyle =
+        Math.floor(frameCount / 5) % 2
+        ? "white"
+        : "red";
+}
             ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
             // HEALTH BAR BACKGROUND
             ctx.fillStyle = "black";
@@ -1784,6 +1869,7 @@ if (playerDistance < explosion.radius && playerIFrames <= 0) {
 
                 6
             );
+        ctx.shadowBlur = 0;
         }
 
         // DRAW DROPS
@@ -1847,7 +1933,7 @@ if (playerDistance < explosion.radius && playerIFrames <= 0) {
 
             ctx.globalAlpha = d.life / 40;
 
-            ctx.fillStyle = "white";
+            ctx.fillStyle = d.color || "white";
 
             ctx.font = "24px Arial";
 
@@ -1859,6 +1945,24 @@ if (playerDistance < explosion.radius && playerIFrames <= 0) {
 
             ctx.globalAlpha = 1;
         }
+        // DRAW COIN TEXTS
+        // DRAW COIN TEXTS
+for (const c of coinTexts) {
+
+    ctx.globalAlpha = c.life / 40;
+
+    ctx.fillStyle = "gold";
+
+    ctx.font = "22px Arial";
+
+    ctx.fillText(
+        c.text,
+        c.x,
+        c.y
+    );
+
+    ctx.globalAlpha = 1;
+}
 
         // DRAW SPAWN WARNING SYSTEM
         for (let i = spawnWarnings.length - 1; i >= 0; i--) {
@@ -2054,7 +2158,7 @@ ctx.font = "24px Arial";
 
             ctx.font = "28px Arial";
             for (let i = 0; i < perkChoices.length; i++) {
-                ctx.fillText((i + 1) + ". " + perkChoices[i], canvas.width / 2, 220 + i * 70);
+                ctx.fillText((i + 1) + ". " + perkChoices[i], canvas.width / 2, 220 + i * 45);
             }
             ctx.textAlign = "left";
         }
@@ -2125,16 +2229,36 @@ ctx.font = "24px Arial";
                 "3 - SMG",
                 "4 - Sniper",
                 "5 - Rocket Launcher",
-                "B - Open Shop (During Wave Breaks)",
+                "B - Open Shop",
                 "ESC - Pause"
             ];
 
             for (let i = 0; i < controls.length; i++) {
-                ctx.fillText(controls[i], canvas.width / 2, 200 + i * 50);
-            }
+
+    const y =
+        200 +
+        i * 50 -
+        controlsScroll;
+
+    // ONLY DRAW VISIBLE TEXT
+    if (y > 120 && y < canvas.height - 40) {
+
+        ctx.fillText(
+            controls[i],
+            canvas.width / 2,
+            y
+        );
+    }
+}
 
             ctx.font = "22px Arial";
             ctx.fillText("Press ESC to return", canvas.width / 2, 500);
+            ctx.font = "18px Arial";
+ctx.fillText(
+    "Mouse Wheel To Scroll",
+    canvas.width / 2,
+    525
+);
             ctx.textAlign = "left";
         }
     }
