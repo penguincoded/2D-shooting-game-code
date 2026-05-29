@@ -12,7 +12,7 @@
     const shootSound = new Audio("assets/shoot.wav");
     const hitSound = new Audio("assets/hit.wav");
 
-    // =========================
+// =========================
 // PLAYER
 // =========================
 
