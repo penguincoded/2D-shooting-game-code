@@ -4,6 +4,8 @@
     canvas.width = 960;
     canvas.height = 540;
 
+    
+
     // =========================
     // SOUNDS
     // =========================
@@ -100,13 +102,13 @@ let difficultySettings = {
     // =========================
     let choosingPerk = false;
     const perkChoices = [
-        "More Health       ",
-        "Faster Reload     ",
-        "Speed Up          ",
-        "More Damage       ",
-        "Crit Chance Up    ",
-        "Crit Multiplier Up"
-    ];
+    "More Health",
+    "Faster Reload",
+    "Speed Up",
+    "More Damage",
+    "Crit Chance Up",
+    "Crit Multiplier Up"
+];
     let damageMultiplier = 1;
     let reloadMultiplier = 1;
     // =========================
@@ -868,6 +870,8 @@ if (Math.random() < 0.12) {
 
             health: 200,
             maxHealth: 200,
+
+            coinReward: 500,
 
             color: "darkred",
 
@@ -1760,8 +1764,24 @@ for (let i = coinTexts.length - 1; i >= 0; i--) {
         // HOME SCREEN
         // =========================
         if (!gameStarted) {
-            ctx.fillStyle = "#111";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const bg =
+    ctx.createLinearGradient(
+        0,
+        0,
+        0,
+        canvas.height
+    );
+
+bg.addColorStop(0, "#181818");
+bg.addColorStop(1, "#050505");
+
+ctx.fillStyle = bg;
+ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+);
 
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
@@ -1999,25 +2019,54 @@ for (const c of coinTexts) {
 
         // DISPLAY WAVE BREAK TIMERS
         if (waveRest) {
-            ctx.fillStyle = "yellow";
-            ctx.font = "32px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Next Wave In: " + restTimer, canvas.width / 2, 80);
-            ctx.textAlign = "left";
-            ctx.fillStyle = "white";
 
-ctx.font = "24px Arial";
+    ctx.fillStyle = "yellow";
+    ctx.textAlign = "center";
 
+    // PULSE EFFECT
+    const pulse =
+        Math.sin(frameCount * 0.15) * 8;
 
-        }
+    ctx.font =
+        (48 + pulse) + "px Arial";
+
+    // BOSS WARNING
+    if (pendingBossWave) {
+
+        ctx.fillStyle = "red";
+
+        ctx.fillText(
+            "BOSS INCOMING",
+            canvas.width / 2,
+            120
+        );
+    }
+
+    // NORMAL WAVE TIMER
+    ctx.fillStyle = "yellow";
+
+    ctx.font = "32px Arial";
+
+    ctx.fillText(
+        "Next Wave In: " + restTimer,
+        canvas.width / 2,
+        80
+    );
+
+    ctx.textAlign = "left";
+}
         if (shopOpen) {
 
     ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(200, 70, 560, 400);
+    ctx.beginPath();
+    ctx.roundRect(200, 70, 560, 400, 20);
+    ctx.fill();
 
     ctx.strokeStyle = "white";
     ctx.lineWidth = 4;
-    ctx.strokeRect(200, 70, 560, 400);
+    ctx.beginPath();
+    ctx.roundRect(200, 70, 560, 400, 20);
+    ctx.stroke();
 
     // TITLE
     ctx.fillStyle = "yellow";
@@ -2148,20 +2197,77 @@ ctx.font = "24px Arial";
         // PERK CHOICE MENU MODAL
         // =========================
         if (choosingPerk) {
-            ctx.fillStyle = "rgba(0,0,0,0.7)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = "white";
-            ctx.font = "40px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Choose A Perk", canvas.width / 2, 120);
+    // BACKGROUND DARKEN
+    ctx.fillStyle = "rgba(0,0,0,0.85)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.font = "28px Arial";
-            for (let i = 0; i < perkChoices.length; i++) {
-                ctx.fillText((i + 1) + ". " + perkChoices[i], canvas.width / 2, 220 + i * 45);
-            }
-            ctx.textAlign = "left";
-        }
+    // MAIN BOX
+    ctx.fillStyle = "rgba(20,20,20,0.95)";
+    ctx.beginPath();
+    ctx.roundRect(170, 60, 620, 420, 20);
+    ctx.fill();
+
+    // BORDER
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(170, 60, 620, 420, 20);
+    ctx.stroke();
+
+    // TITLE
+    ctx.fillStyle = "yellow";
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        "CHOOSE A PERK",
+        canvas.width / 2,
+        120
+    );
+
+    // PERKS
+    ctx.font = "28px Arial";
+
+    const perkColors = [
+        "lime",
+        "cyan",
+        "orange",
+        "red",
+        "violet",
+        "gold"
+    ];
+
+    for (let i = 0; i < perkChoices.length; i++) {
+
+        const y = 190 + i * 42;
+
+        // PERK BOX
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        ctx.fillRect(240, y - 28, 480, 36);
+
+        // PERK COLOR
+        ctx.fillStyle = perkColors[i];
+
+        ctx.fillText(
+            (i + 1) + " - " + perkChoices[i],
+            canvas.width / 2,
+            y
+        );
+    }
+
+    // INFO TEXT
+    ctx.fillStyle = "white";
+    ctx.font = "22px Arial";
+
+    ctx.fillText(
+        "Press Number Key To Select",
+        canvas.width / 2,
+        440
+    );
+
+    ctx.textAlign = "left";
+}
 
         // =========================
         // NOTIFICATION TEXT
@@ -2190,7 +2296,9 @@ ctx.font = "24px Arial";
         // =========================
         if (paused) {
             ctx.fillStyle = "rgba(0,0,0,0.7)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
+            ctx.fill();
 
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
@@ -2199,9 +2307,22 @@ ctx.font = "24px Arial";
             ctx.fillText("PAUSED", canvas.width / 2, 140);
 
             ctx.font = "30px Arial";
+
+            ctx.fillStyle = "rgba(255,255,255,0.08)";
+            ctx.fillRect(canvas.width / 2 - 120, 190, 240, 40);
+            ctx.fillStyle = "white";
             ctx.fillText("1 - Resume", canvas.width / 2, 240);
+            
+            ctx.fillStyle = "rgba(255,255,255,0.08)";
+            ctx.fillRect(canvas.width / 2 - 120, 240, 240, 40);
+            ctx.fillStyle = "white";
             ctx.fillText("2 - Controls", canvas.width / 2, 300);
+
+            ctx.fillStyle = "rgba(255,255,255,0.08)";
+            ctx.fillRect(canvas.width / 2 - 120, 300, 240, 40);
+            ctx.fillStyle = "white";
             ctx.fillText("3 - Home Screen", canvas.width / 2, 360);
+
             ctx.textAlign = "left";
         }
 
@@ -2261,6 +2382,21 @@ ctx.fillText(
 );
             ctx.textAlign = "left";
         }
+        ctx.strokeStyle = "white";
+ctx.lineWidth = 2;
+
+ctx.strokeStyle = "white";
+ctx.lineWidth = 2;
+
+ctx.beginPath();
+
+ctx.moveTo(mouse.x - 10, mouse.y);
+ctx.lineTo(mouse.x + 10, mouse.y);
+
+ctx.moveTo(mouse.x, mouse.y - 10);
+ctx.lineTo(mouse.x, mouse.y + 10);
+
+ctx.stroke();
     }
 
     // =========================
